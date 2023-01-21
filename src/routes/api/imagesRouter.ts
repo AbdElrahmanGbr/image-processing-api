@@ -1,54 +1,84 @@
-import express from 'express'
-import logger from '../../helpers/logger'
+import express, { Request, Response } from 'express'
 import path from 'path'
 import fs from 'fs/promises'
-import sharp from 'sharp'
+import sizeOf from 'image-size'
+import { Stats } from 'fs'
+import imageHelper from '../../helpers/imageHelper'
+import { ISizeCalculationResult } from 'image-size/dist/types/interface'
 
 const imagesRouter = express.Router()
-imagesRouter.use(logger)
+const imagesDir = path.resolve(__dirname, '../../../public/assets/')
 
-imagesRouter.get('/', async (req, res) => {
-  const filename = req.query.filename
-  const width = req.query.width ? parseInt(req.query.width as string, 10) : null
-  const height = req.query.height
-    ? parseInt(req.query.height as string, 10)
+const checkImageSize = async (
+  pathToThumbImage: string,
+  width: number,
+  height: number
+) => {
+  try {
+    const oldThumb: Stats | null = await fs.stat(pathToThumbImage)
+    const size: ISizeCalculationResult | null = oldThumb
+      ? sizeOf(pathToThumbImage)
+      : null
+    return oldThumb && size && size.height === height && size.width === width
+  } catch {
+    return false
+  }
+}
+
+imagesRouter.get('/', async (req: Request, res: Response): Promise<void> => {
+  const filename = req.query['filename']
+  const height = req.query['height']
+    ? parseInt(req.query['height'] as string, 10)
+    : null
+  const width = req.query['width']
+    ? parseInt(req.query['width'] as string, 10)
     : null
 
-  // Running Validation On The Query
-  if (!filename) {
-    res.status(400).send('The Filename of the Image is missing!')
+  if (!filename || !width || !height) {
+    let errorMessage = ''
+    if (!filename) {
+      errorMessage += 'The Filename of the Image is missing! '
+    }
+    if (!width) {
+      errorMessage += 'The Width of the Image is missing! '
+    }
+    if (!height) {
+      errorMessage += 'The Height of the Image is missing! '
+    }
+    res.status(400).send(errorMessage)
     return
-  } else if (!width) {
-    res.status(400).send('The Width of the Image is missing!')
-  } else if (!height) {
-    res.status(400).send('The Height of the Image is missing!')
   }
 
-  // Declaring path's for full/thumb images
-  const pathToFullImage = `${path.resolve(
-    __dirname,
-    `../../../public/assets/fullImages/${filename}.jpg`
-  )}`
+  const pathToFullImage = `${imagesDir}/fullImages/${filename}.jpg`
+  const pathToThumbImage = `${imagesDir}/thumb/${filename}-${height}x${width}.jpg.jpg`
 
-  const pathToThumbImage = `${path.resolve(
-    __dirname,
-    `../../../public/assets/thumb/${filename}.jpg`
-  )}`
+  try {
+    await fs.stat(pathToFullImage)
+    const hasRequiredSize = await checkImageSize(
+      pathToThumbImage,
+      width,
+      height
+    )
 
-  await fs.stat(pathToFullImage).catch((e) => res.status(404).send(e)) // Checking for existence
-  await fs.stat(pathToThumbImage).catch((e) => res.status(404).send(e)) // Checking for existence
-  const data = await fs.readFile(pathToFullImage)
-
-  // Resizing the Image
-  sharp(data)
-    .resize(width, height)
-    .toFile(pathToThumbImage, async () => {
-      await fs.stat(pathToThumbImage).catch((e) => res.status(500).send(e))
+    if (hasRequiredSize) {
       const thumbData = await fs.readFile(pathToThumbImage)
-
-      // Adding Headers
       res.status(200).contentType('jpg').send(thumbData)
-    })
+    } else {
+      const newResizedImage = await imageHelper.imageResizer({
+        pathToFullImage,
+        pathToThumbImage,
+        height,
+        width,
+      })
+      res.status(200).contentType('jpg').send(newResizedImage)
+    }
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
+      res.status(404).send('This Image Does not exist!')
+    } else {
+      res.status(500).send('Error With Creating the New Resized Image!')
+    }
+  }
 })
 
 export default imagesRouter
