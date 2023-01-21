@@ -43,6 +43,6 @@ app.get('/', function (req, res) {
 });
 // start express server
 app.listen(PORT, function () {
-    console.log("Server is starting at prot:".concat(PORT));
+    console.log("Server is starting at Port:".concat(PORT));
 });
 exports.default = app;
