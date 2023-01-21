@@ -30,6 +30,8 @@ var express_1 = __importDefault(require("express"));
 var morgan_1 = __importDefault(require("morgan"));
 var dotenv = __importStar(require("dotenv"));
 var routes_1 = __importDefault(require("./routes"));
+var path_1 = __importDefault(require("path"));
+var fs = __importStar(require("fs"));
 dotenv.config();
 var PORT = process.env.PORT || 3060;
 // create an instance server
@@ -38,8 +40,16 @@ var app = (0, express_1.default)();
 app.use((0, morgan_1.default)('dev'));
 // Changing main route to start with /api (endpoint)
 app.use('/api', routes_1.default);
+app.get('/', function (_, res) {
+    res.status(200).send('Connected to Server!');
+});
 // start express server
 app.listen(PORT, function () {
+    // Creating Thumb folder if not exist
+    var thumbImagesFolder = path_1.default.resolve(__dirname, '../public/assets/thumb');
+    if (!fs.existsSync(thumbImagesFolder)) {
+        fs.mkdirSync(thumbImagesFolder);
+    }
     console.log("Server is starting at Port:".concat(PORT));
 });
 exports.default = app;
