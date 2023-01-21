@@ -18,6 +18,7 @@
     "@types/jest": "^29.2.6",
     "@types/morgan": "^1.9.4",
     "@types/node": "^18.11.18",
+    "@types/sharp": "^0.31.1",
     "@types/supertest": "^2.0.12",
     "@typescript-eslint/eslint-plugin": "^5.48.2",
     "@typescript-eslint/parser": "^5.48.2",
@@ -35,6 +36,7 @@
     "jasmine": "^4.5.0",
     "jasmine-spec-reporter": "^7.0.0",
     "morgan": "^1.10.0",
+    "sharp": "^0.31.3",
     "supertest": "^6.3.3"
   }
 }
