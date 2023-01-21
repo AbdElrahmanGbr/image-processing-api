@@ -13,10 +13,12 @@ const imageResizer = async ({
   pathToThumbImage,
   height,
   width,
-}: ResizedImageProps) => {
+}: ResizedImageProps): Promise<Buffer> => {
   try {
-    const data = await fs.readFile(pathToFullImage)
-    const imageBuffer = await sharp(data).resize(width, height).toBuffer()
+    const data: Buffer | null = await fs.readFile(pathToFullImage)
+    const imageBuffer: Buffer | null = await sharp(data)
+      .resize(width, height)
+      .toBuffer()
     await fs.writeFile(pathToThumbImage, imageBuffer)
     return imageBuffer
   } catch (err) {

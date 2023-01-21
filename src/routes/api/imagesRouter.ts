@@ -50,7 +50,7 @@ imagesRouter.get('/', async (req: Request, res: Response): Promise<void> => {
   }
 
   const pathToFullImage = `${imagesDir}/fullImages/${filename}.jpg`
-  const pathToThumbImage = `${imagesDir}/thumb/${filename}-${height}x${width}.jpg.jpg`
+  const pathToThumbImage = `${imagesDir}/thumb/${filename}-${height}x${width}.jpg`
 
   try {
     await fs.stat(pathToFullImage)
@@ -61,7 +61,7 @@ imagesRouter.get('/', async (req: Request, res: Response): Promise<void> => {
     )
 
     if (hasRequiredSize) {
-      const thumbData = await fs.readFile(pathToThumbImage)
+      const thumbData: Buffer = await fs.readFile(pathToThumbImage)
       res.status(200).contentType('jpg').send(thumbData)
     } else {
       const newResizedImage = await imageHelper.imageResizer({

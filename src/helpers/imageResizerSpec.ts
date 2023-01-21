@@ -14,7 +14,7 @@ const getPath = (filename: string) => {
   }
 }
 
-describe('ImageResizer Function', () => {
+describe('ImageResizer Function', (): void => {
   const testCases = [
     {
       filename: 'fjord',
@@ -30,7 +30,7 @@ describe('ImageResizer Function', () => {
   testCases.forEach(({ filename, width, height }) => {
     it(`Resizes the image ${filename} successfully`, async () => {
       const { pathToFullImage, pathToThumbImage } = getPath(filename)
-      const imageBuffer = await imageHelper.imageResizer({
+      const imageBuffer: Buffer = await imageHelper.imageResizer({
         height,
         width,
         pathToFullImage,
@@ -39,7 +39,7 @@ describe('ImageResizer Function', () => {
       expect(Buffer.isBuffer(imageBuffer)).toBe(true)
     })
 
-    it(`Rejects promise if something went wrong with ${filename}`, async () => {
+    it(`Rejects promise if something went wrong with ${filename}`, async (): Promise<void> => {
       const { pathToThumbImage } = getPath(filename)
       await expectAsync(
         imageHelper.imageResizer({
