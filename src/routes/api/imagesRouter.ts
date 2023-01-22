@@ -28,13 +28,13 @@ imageRouter.get('/', async (req: Request, res: Response): Promise<void> => {
   // get the full path from the filename
   const pathToFullImage = `${path.resolve(
     __dirname,
-    `../../../public/assets/fullImages/${filename}.jpg`
+    `../../../assets/full/${filename}.jpg`
   )}`
 
   // thumb path in the ${filename}-${height}x${width} format to save different dimensions
   const pathToThumbImage = `${path.resolve(
     __dirname,
-    `../../../public/assets/thumb/${filename}-${height}x${width}.jpg`
+    `../../../assets/thumb/${filename}-${height}x${width}.jpg`
   )}`
 
   // Check if filename exists in full folder
