@@ -1,31 +1,12 @@
 import express, { Request, Response } from 'express'
-import path from 'path'
 import fs from 'fs/promises'
-import sizeOf from 'image-size'
-import { Stats } from 'fs'
+import path from 'path'
 import imageHelper from '../../helpers/imageHelper'
-import { ISizeCalculationResult } from 'image-size/dist/types/interface'
+import { Stats } from 'fs'
 
-const imagesRouter = express.Router()
-const imagesDir = path.resolve(__dirname, '../../../public/assets/')
+const imageRouter = express.Router()
 
-const checkImageSize = async (
-  pathToThumbImage: string,
-  width: number,
-  height: number
-) => {
-  try {
-    const oldThumb: Stats | null = await fs.stat(pathToThumbImage)
-    const size: ISizeCalculationResult | null = oldThumb
-      ? sizeOf(pathToThumbImage)
-      : null
-    return oldThumb && size && size.height === height && size.width === width
-  } catch {
-    return false
-  }
-}
-
-imagesRouter.get('/', async (req: Request, res: Response): Promise<void> => {
+imageRouter.get('/', async (req: Request, res: Response): Promise<void> => {
   const filename = req.query['filename']
   const height = req.query['height']
     ? parseInt(req.query['height'] as string, 10)
@@ -34,51 +15,69 @@ imagesRouter.get('/', async (req: Request, res: Response): Promise<void> => {
     ? parseInt(req.query['width'] as string, 10)
     : null
 
-  if (!filename || !width || !height) {
-    let errorMessage = ''
-    if (!filename) {
-      errorMessage += 'The Filename of the Image is missing! '
-    }
-    if (!width) {
-      errorMessage += 'The Width of the Image is missing! '
-    }
-    if (!height) {
-      errorMessage += 'The Height of the Image is missing! '
-    }
-    res.status(400).send(errorMessage)
+  // check if the query is correct
+  if (!filename || !height || !width) {
+    res
+      .status(400)
+      .send(
+        'Please make sure url contains correct filename, height and width params'
+      )
     return
   }
 
-  const pathToFullImage = `${imagesDir}/fullImages/${filename}.jpg`
-  const pathToThumbImage = `${imagesDir}/thumb/${filename}-${height}x${width}.jpg`
+  // get the full path from the filename
+  const pathToFullImage = `${path.resolve(
+    __dirname,
+    `../../../public/assets/fullImages/${filename}.jpg`
+  )}`
 
-  try {
-    await fs.stat(pathToFullImage)
-    const hasRequiredSize = await checkImageSize(
-      pathToThumbImage,
-      width,
-      height
-    )
+  // thumb path in the ${filename}-${height}x${width} format to save different dimensions
+  const pathToThumbImage = `${path.resolve(
+    __dirname,
+    `../../../public/assets/thumb/${filename}-${height}x${width}.jpg`
+  )}`
 
-    if (hasRequiredSize) {
-      const thumbData: Buffer = await fs.readFile(pathToThumbImage)
-      res.status(200).contentType('jpg').send(thumbData)
-    } else {
-      const newResizedImage = await imageHelper.imageResizer({
+  // Check if filename exists in full folder
+  const fullImage: Stats | null = await fs.stat(pathToFullImage).catch(() => {
+    res.status(404).send('Image does not exist')
+    return null
+  })
+
+  if (!fullImage) {
+    return
+  }
+
+  // Check if thumb was already created
+  const existingThumb: Stats | null = await fs
+    .stat(pathToThumbImage)
+    .catch(() => {
+      return null
+    })
+
+  if (existingThumb) {
+    fs.readFile(pathToThumbImage)
+      .then((thumbData: Buffer) => {
+        res.status(200).contentType('jpg').send(thumbData)
+      })
+      .catch(() => {
+        res.status(500).send('Error occurred processing the image')
+      })
+  } else {
+    // resize image
+    imageHelper
+      .imageResizer({
         pathToFullImage,
         pathToThumbImage,
         height,
         width,
       })
-      res.status(200).contentType('jpg').send(newResizedImage)
-    }
-  } catch (err) {
-    if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
-      res.status(404).send('This Image Does not exist!')
-    } else {
-      res.status(500).send('Error With Creating the New Resized Image!')
-    }
+      .then((resizedImage: Buffer) => {
+        res.status(200).contentType('jpg').send(resizedImage)
+      })
+      .catch(() => {
+        res.status(500).send('Error occurred processing the image')
+      })
   }
 })
 
-export default imagesRouter
+export default imageRouter

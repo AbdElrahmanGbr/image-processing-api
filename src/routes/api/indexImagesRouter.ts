@@ -1,37 +1,39 @@
-import express, { Request, Response } from 'express'
+import express, { Response, Request } from 'express'
 import fs from 'fs/promises'
 import path from 'path'
 
-const indexImagesRouter = express.Router()
-indexImagesRouter.get(
+const listImagesRouter = express.Router()
+
+listImagesRouter.get(
   '/',
   async (_req: Request, res: Response): Promise<void> => {
-    const pathToFullImage = `${path.resolve(
+    const folderPathFullImage = `${path.resolve(
       __dirname,
-      '../../../public/assets/fullImages'
+      '../../../assets/full'
     )}`
-    const images: string[] | null = await fs
-      .readdir(pathToFullImage)
+
+    const files: string[] | null = await fs
+      .readdir(folderPathFullImage)
       .catch(() => {
-        res.status(500).send('Error occurred while reading Full Images')
+        res.status(500).send('Error occurred reading the images')
         return null
       })
-    if (!images) {
+
+    if (!files) {
       return
     }
 
-    let printOnHTML = `
-    <center>
-    <h1>All images</h1>
-    <strong>All Images found in /api/images</strong>
-    <ul>
-`
-    images.forEach((image: string): void => {
-      printOnHTML =
-        printOnHTML + `<li style="list-style-type: none">${image}</li>`
+    let htmlResponse = `
+<center>
+        <h1>Available images</h1>
+    `
+
+    files.forEach((file: string): void => {
+      htmlResponse = htmlResponse + `<li>${file}</li>`
     })
-    res.status(200).send(`${printOnHTML}</ul></center>`)
+
+    res.status(200).send(`${htmlResponse}</ul></center>`)
   }
 )
 
-export default indexImagesRouter
+export default listImagesRouter

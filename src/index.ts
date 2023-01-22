@@ -5,7 +5,7 @@ import routes from './routes'
 import path from 'path'
 import * as fs from 'fs'
 dotenv.config()
-const PORT = process.env.PORT || 3060
+const PORT = process.env.PORT || 3000
 // create an instance server
 const app: Application = express()
 // HTTP request logger middleware
@@ -18,10 +18,10 @@ app.get('/', (_, res: Response) => {
 // start express server
 app.listen(PORT, (): void => {
   // Creating Thumb folder if not exist
-  const thumbImagesFolder = path.resolve(__dirname, '../public/assets/thumb')
+  const thumbImagesFolder = path.resolve(__dirname, '../assets/thumb')
   if (!fs.existsSync(thumbImagesFolder)) {
     fs.mkdirSync(thumbImagesFolder)
   }
-  console.log(`Server is starting at Port:${PORT}`)
+  // console.log(`Server is starting at Port:${PORT}`)
 })
 export default app
