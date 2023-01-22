@@ -2,9 +2,9 @@ import express, { Response, Request } from 'express'
 import fs from 'fs/promises'
 import path from 'path'
 
-const listImagesRouter = express.Router()
+const indexImagesRouter = express.Router()
 
-listImagesRouter.get(
+indexImagesRouter.get(
   '/',
   async (_req: Request, res: Response): Promise<void> => {
     const folderPathFullImage = `${path.resolve(
@@ -36,4 +36,4 @@ listImagesRouter.get(
   }
 )
 
-export default listImagesRouter
+export default indexImagesRouter
